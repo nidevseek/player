@@ -1,35 +1,133 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Video Player</title>
+  <title>Демонстрация игры от therikky.su</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <style>
-    /* Добавим немного стилей для центрирования */
     body {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
       margin: 0;
-      background-color: #f0f0f0;
+      background: linear-gradient(135deg, #dce3f0, #f7f9fc);
+      font-family: "Segoe UI", sans-serif;
     }
+
     .player {
-      background-color: #fff;
-      padding: 20px;
-      border-radius: 8px;
-      box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 15px;
+      width: 720px;
+      max-width: 95%;
     }
+
     video {
-      display: block;
-      max-width: 90%;
-      height: auto;
+      width: 100%;
+      border-radius: 8px;
+      background-color: #000;
+    }
+
+    .controls {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .controls button {
+      background: #0078d7;
+      color: white;
+      border: none;
+      padding: 8px 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .controls button:hover {
+      background: #005ea6;
+    }
+
+    .controls input[type="range"] {
+      flex-grow: 1;
+      cursor: pointer;
+      accent-color: #0078d7;
+    }
+
+    .time {
+      font-size: 14px;
+      color: #333;
+      min-width: 90px;
+      text-align: right;
     }
   </style>
 </head>
 <body>
   <div class="player">
-    <video controls src="https://gachi.gay/48g4LE"></video>
+    <video id="video" src="https://gachi.gay/48g4LE"></video>
+
+    <div class="controls">
+      <button id="play"><i class="fa-solid fa-play"></i></button>
+      <input type="range" id="progress" value="0" min="0" step="0.1">
+      <button id="mute"><i class="fa-solid fa-volume-high"></i></button>
+      <input type="range" id="volume" min="0" max="1" step="0.05" value="1">
+      <div class="time" id="time">0:00 / 0:00</div>
+    </div>
   </div>
+
+  <script>
+    const video = document.getElementById('video');
+    const playBtn = document.getElementById('play');
+    const muteBtn = document.getElementById('mute');
+    const volume = document.getElementById('volume');
+    const progress = document.getElementById('progress');
+    const time = document.getElementById('time');
+
+    playBtn.addEventListener('click', () => {
+      if (video.paused) {
+        video.play();
+        playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+      } else {
+        video.pause();
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+      }
+    });
+    
+    video.addEventListener('timeupdate', () => {
+      progress.value = (video.currentTime / video.duration) * 100 || 0;
+      const format = t => {
+        const m = Math.floor(t / 60);
+        const s = Math.floor(t % 60).toString().padStart(2, '0');
+        return `${m}:${s}`;
+      };
+      time.textContent = `${format(video.currentTime)} / ${format(video.duration)}`;
+    });
+
+    progress.addEventListener('input', () => {
+      video.currentTime = (progress.value / 100) * video.duration;
+    });
+
+    volume.addEventListener('input', () => {
+      video.volume = volume.value;
+      muteBtn.innerHTML = 
+        video.volume === 0 ? '<i class="fa-solid fa-volume-xmark"></i>' : '<i class="fa-solid fa-volume-high"></i>';
+    });
+
+    muteBtn.addEventListener('click', () => {
+      video.muted = !video.muted;
+      muteBtn.innerHTML = video.muted 
+        ? '<i class="fa-solid fa-volume-xmark"></i>' 
+        : '<i class="fa-solid fa-volume-high"></i>';
+    });
+  </script>
 </body>
 </html>
