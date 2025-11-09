@@ -1,9 +1,16 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Демонстрация игры от therikky.su</title>
+    <title>Video Player</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
+        :root {
+            --primary-color: #FF5722;
+            --bg-dark: #1f1f1f;
+            --bg-light: #333333;
+            --text-color: #f0f0f0;
+        }
+
         body {
             display: flex;
             justify-content: center;
@@ -11,19 +18,25 @@
             min-height: 100vh;
             margin: 0;
             background-color: #121212;
-            font-family: sans-serif;
-            color: #ffffff;
+            font-family: 'Arial', sans-serif;
+            color: var(--text-color);
         }
 
         .player {
             display: flex;
             flex-direction: column;
             width: 90%;
-            max-width: 800px;
-            background-color: #1e1e1e;
+            max-width: 850px;
+            background-color: var(--bg-dark);
             border-radius: 12px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
             overflow: hidden;
+            transition: box-shadow 0.3s;
+        }
+
+        .video-container {
+            position: relative;
+            width: 100%;
         }
 
         #video {
@@ -37,92 +50,122 @@
             display: flex;
             align-items: center;
             padding: 10px 15px;
-            background-color: #2a2a2a;
-            gap: 10px;
+            background-color: var(--bg-light);
+            gap: 15px;
+            border-top: 1px solid #444;
         }
 
         .controls button {
             background: none;
             border: none;
-            color: #ffffff;
+            color: var(--text-color);
             cursor: pointer;
-            padding: 8px;
-            font-size: 18px;
-            transition: color 0.2s;
+            padding: 5px 8px;
+            font-size: 20px;
+            transition: color 0.2s, transform 0.1s;
             outline: none;
         }
 
         .controls button:hover {
-            color: #00bcd4;
+            color: var(--primary-color);
+            transform: scale(1.05);
         }
 
-        #progress {
+        .progress-container {
             flex-grow: 1;
-            height: 8px;
+            display: flex;
+            align-items: center;
+            margin: 0 10px;
+        }
+        
+        #progress {
+            width: 100%;
+            height: 6px;
             cursor: pointer;
             -webkit-appearance: none;
             appearance: none;
             background: #555;
-            border-radius: 4px;
-            margin: 0 15px;
+            border-radius: 3px;
             outline: none;
+            transition: background 0.3s;
         }
 
         #progress::-webkit-slider-thumb {
             -webkit-appearance: none;
             appearance: none;
-            width: 14px;
-            height: 14px;
-            background: #00bcd4;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-color);
             border-radius: 50%;
             cursor: pointer;
+            transition: background 0.2s;
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+        
+        #progress:hover::-webkit-slider-thumb {
+            width: 14px;
+            height: 14px;
         }
 
         #progress::-moz-range-thumb {
-            width: 14px;
-            height: 14px;
-            background: #00bcd4;
+            width: 12px;
+            height: 12px;
+            background: var(--primary-color);
             border-radius: 50%;
             cursor: pointer;
             border: none;
         }
-
+        
+        #progress:hover::-moz-range-thumb {
+            width: 14px;
+            height: 14px;
+        }
+        
         .time {
             font-size: 0.9em;
+            color: var(--text-color);
             white-space: nowrap;
+            margin-left: 5px;
         }
 
         .footer {
             padding: 8px 15px;
             font-size: 0.8em;
             text-align: center;
-            background-color: #1e1e1e;
-            border-top: 1px solid #333;
+            background-color: var(--bg-dark);
+            border-top: 1px solid #444;
             color: #999;
         }
 
         .footer a {
-            color: #00bcd4;
+            color: var(--primary-color);
             text-decoration: none;
             transition: color 0.2s;
         }
 
         .footer a:hover {
-            color: #ffffff;
+            color: var(--text-color);
             text-decoration: underline;
         }
     </style>
 </head>
 <body>
     <div class="player">
-        <video id="video" src="https://gachi.gay/48g4LE"></video>
+        <div class="video-container">
+            <video id="video" src="https://gachi.gay/48g4LE" preload="metadata"></video>
+        </div>
 
         <div class="controls">
             <button id="play"><i class="fa-solid fa-play"></i></button>
-            <input type="range" id="progress" value="0" min="0" max="100" step="0.1">
+            
+            <div class="progress-container">
+                <input type="range" id="progress" value="0" min="0" max="100" step="0.1">
+            </div>
+
+            <div class="time" id="time">0:00 / 0:00</div>
+            
             <button id="mute"><i class="fa-solid fa-volume-high"></i></button>
             <button id="fullscreen"><i class="fa-solid fa-expand"></i></button>
-            <div class="time" id="time">0:00 / 0:00</div>
         </div>
 
         <div class="footer">Сайт и игра создана <a href="http://therikky.su" target="_blank">therikky.su</a>, надеюсь вам понравится!</div>
@@ -134,18 +177,20 @@
         const muteBtn = document.getElementById('mute');
         const fullscreenBtn = document.getElementById('fullscreen');
         const progress = document.getElementById('progress');
-        const time = document.getElementById('time');
+        const timeDisplay = document.getElementById('time');
+        const playerContainer = document.querySelector('.player');
 
         const formatTime = t => {
+            if (isNaN(t) || t < 0) return '0:00';
             const m = Math.floor(t / 60);
             const s = Math.floor(t % 60).toString().padStart(2, '0');
             return `${m}:${s}`;
         };
 
         video.addEventListener('loadedmetadata', () => {
-            time.textContent = `0:00 / ${formatTime(video.duration)}`;
+            timeDisplay.textContent = `0:00 / ${formatTime(video.duration)}`;
         });
-
+        
         playBtn.addEventListener('click', () => {
             if (video.paused) {
                 video.play();
@@ -157,8 +202,12 @@
         });
 
         video.addEventListener('timeupdate', () => {
-            progress.value = (video.currentTime / video.duration) * 100 || 0;
-            time.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
+            if (!video.duration) {
+                 progress.value = 0;
+            } else {
+                 progress.value = (video.currentTime / video.duration) * 100;
+            }
+            timeDisplay.textContent = `${formatTime(video.currentTime)} / ${formatTime(video.duration)}`;
         });
 
         progress.addEventListener('input', () => {
@@ -173,17 +222,11 @@
         });
 
         fullscreenBtn.addEventListener('click', () => {
-            const playerContainer = document.querySelector('.player');
-
             if (!document.fullscreenElement) {
                 if (playerContainer.requestFullscreen) {
                     playerContainer.requestFullscreen();
-                } else if (playerContainer.mozRequestFullScreen) {
-                    playerContainer.mozRequestFullScreen();
                 } else if (playerContainer.webkitRequestFullscreen) {
                     playerContainer.webkitRequestFullscreen();
-                } else if (playerContainer.msRequestFullscreen) {
-                    playerContainer.msRequestFullscreen();
                 }
                 fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
             } else {
